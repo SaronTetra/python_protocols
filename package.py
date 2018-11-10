@@ -3,6 +3,7 @@
 from bitstring import BitArray
 import maths
 import math
+import random
 
 
 def operatorConvert(op):
@@ -43,43 +44,62 @@ def operatorConvert(op):
         return operator
 
 
-def numberToBinary(num):                     
-    """Convert int to binary"""
-    #TODO: negative numbers
-    i = 31
-    print (f"Num: {num}")
-    number = BitArray(32)
+def numberToBinary(num, bits):                     
+    """Convert int to binary array with lenght bits"""
+    #print (f"Num: {num}")
+
+#Variables
+    neg = False
+    i = bits - 1
+
+#Check if negative
+    if (num < 0):
+        neg = True
+        num += 1
+        num = abs(num)
+
+#Convert to bits
+    number = BitArray(bits)
     while num > 0:
         if num % 2 == 1:
             number[i] = 1
         num = math.floor(num / 2)
         i-=1
-    print (f"Number: {number.int}")
+
+#Invert if negative
+    if (neg == True):
+        number.invert()
+    
+    #print (f"Number binary: {number.bin}")
+    #print (f"Number int: {number.int}")
     return number
 
-# def binaryToNumber(num):                     
-#     """Convert binary to int"""
-#     #TODO: negative numbers
 
-#     result = 0
-#     for i in range(31, 0):
-#         result += num[i].int * 2 **i
-#     return result
-
-def IDGen():
-    ID = BitArray(8)
+def IDGen(): #TODO: Used adresses
+    """Generate session ID"""
+    ID = BitArray(0)
+    ID = numberToBinary(random.randrange(0, 256), 8)
     return ID
 
 def status():
+    """Change status to binary"""
     status = BitArray(2)
     return status
 
 def pack(op, num1, num2):
-    """Create package"""
+    """
+    Create package
+    0-2 bits: operation
+    3-34 bits: first number
+    35-66 bits: second number
+    67-68 bits: status
+    69-76 bits: session id
+    77-79 bits: padding/for future use
+    """
     package = BitArray(0)
     package.append(operatorConvert(op))
-    package.append(numberToBinary(num1))
-    package.append(numberToBinary(num2))
+    package.append(numberToBinary(num1, 32))
+    package.append(numberToBinary(num2, 32))
     package.append(status())
     package.append(IDGen()) 
     package.append(3)

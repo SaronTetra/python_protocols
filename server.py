@@ -7,18 +7,23 @@ print("""
 #       SERVER         #
 ########################""")
 
+
+#Connection variables
 HOST = '127.0.0.1'
-HOST = '192.168.0.20'
-
+#HOST = '192.168.0.20'
 PORT = 4666
+flag =socket.SHUT_RDWR
 
+#Creating socket
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.bind((HOST, PORT))
 
+#Waiting for connection
     print("Listening")
     s.listen()
-    conn, addr = s.accept()
 
+#Recieving package
+    conn, addr = s.accept()
     with conn:
         print("Connected by", addr)
         while True:
@@ -29,16 +34,16 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 
             print(f"Recieved: {data.bin[0:3]} {data.bin[3:35]} {data.bin[35:67]}\
              {data.bin[67:69]} {data.bin[69:77]} {data.bin[77:]}")
-            print(f"Recieved: ", data.bin)
+            #print(f"Recieved: ", data.bin)
             #strings = str(data.decode('utf'))
             #print(f"decode: {strings}")
             
-
-            operation = data[0:3].bin #czyta bajty, nie bity
-            #num1 = BitArray(32)
-            #num2 = BitArray(32)
+#Operating on recieved data
+            operation = data[0:3].bin
             a = data[3:35].int
             b = data[35:67].int
+            status = data[67:69]
+            sessionID = data[69:77].bin
             print(f"A: {a}, B:{b}")
             status = data[67:69]
             id = data[69:77]
@@ -48,12 +53,16 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             # x = input("Commands pls ")
             print("Operation: " + str(operation))
             result = package.countTwo(operation, a, b)
+            #TODO: checking whether number is less than or equal to 32 bits
 
+#TODO: recieve loop, more than two arguments
+#Sending result to client
             print(f"Result: {result}")
-            conn.sendall(package.numberToBinary(result).tobytes())
-            #conn.sendall(b"Dostalem operacje: " + operation + b"\n\
-            #Wynik to: " + str(result))
+            conn.sendall(package.numberToBinary(result, 32).tobytes())
 
 
+#End connection
+    #s.shutdown(flag)
+    s.close()
 
 #wait = input("PRESS ENTER TO CONTINUE.")
