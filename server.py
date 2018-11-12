@@ -22,28 +22,35 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     print("Listening")
     s.listen()
 
-#Recieving package
+#Accepting connection
     conn, addr = s.accept()
     with conn:
         print("Connected by", addr)
+
+#Generate and send session id
+        sessionID = BitArray()
+        sessionID = package.IDGen()
+        idPack = package.pack('+', 0, 0, 1, sessionID)
+        print (f"Sending session ID: {idPack.bin[0:3]} {idPack.bin[3:35]} {idPack.bin[35:67]}",
+        f" {idPack.bin[67:69]} {idPack.bin[69:77]} {idPack.bin[77:]}")
+        conn.send(idPack.tobytes())
+
         while True:
-            data = BitStream()
+            data = BitArray()
             data.append(conn.recv(1024))
             if not data:
                 break
 
-            print(f"Recieved: {data.bin[0:3]} {data.bin[3:35]} {data.bin[35:67]}\
-             {data.bin[67:69]} {data.bin[69:77]} {data.bin[77:]}")
-            #print(f"Recieved: ", data.bin)
-            #strings = str(data.decode('utf'))
-            #print(f"decode: {strings}")
+            print(f"Recieved: {data.bin[0:3]} {data.bin[3:35]}", 
+            f"{data.bin[35:67]} {data.bin[67:69]} {data.bin[69:77]}",
+            f"{data.bin[77:]}\nData size: {data.len}")
             
 #Operating on recieved data
             operation = data[0:3].bin
             a = data[3:35].int
             b = data[35:67].int
             status = data[67:69]
-            sessionID = data[69:77].bin
+            clientID = data[69:77].bin
             print(f"A: {a}, B:{b}")
             status = data[67:69]
             id = data[69:77]

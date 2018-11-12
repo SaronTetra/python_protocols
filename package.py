@@ -77,16 +77,29 @@ def numberToBinary(num, bits):
 
 def IDGen(): #TODO: Used adresses
     """Generate session ID"""
-    ID = BitArray(0)
+    ID = BitArray()
     ID = numberToBinary(random.randrange(0, 256), 8)
     return ID
 
-def status():
-    """Change status to binary"""
-    status = BitArray(2)
+def status(num):
+    """
+    Change status to binary
+    00 - normal (?)
+    01 - session ID
+    10 - number out of range (?, posiible merge with error?)
+    11 - error
+
+    Alternative status may be:
+    00 - two arguments
+    01 - last
+    10 - ack (ask whether it is required since it's TCP)
+    11 - more arguments
+    """
+    #maybe do this using enum rather than numbers
+    status = BitArray(numberToBinary(num, 2))
     return status
 
-def pack(op, num1, num2):
+def pack(op, num1, num2, stat, id):
     """
     Create package
     0-2 bits: operation
@@ -100,8 +113,8 @@ def pack(op, num1, num2):
     package.append(operatorConvert(op))
     package.append(numberToBinary(num1, 32))
     package.append(numberToBinary(num2, 32))
-    package.append(status())
-    package.append(IDGen()) 
+    package.append(numberToBinary(stat, 2))
+    package.append(id) 
     package.append(3)
     return package
 
