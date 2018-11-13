@@ -38,50 +38,32 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     idPack = BitArray(0)
     sessionID = BitArray()
     idPack.append(s.recv(1024))
-    print(f"Recieved status: {idPack.bin[67:69]}")
-    if idPack[67:69].int == 1:
-        sessionID = idPack[69:77]
+    print(f"Recieved status: {idPack.bin[45:]}")
+    if idPack[45:].int == 1:
+        sessionID = idPack[37:45]
         print(f"Session ID: {sessionID}")
 
 
 #Input for package
 
-    op = input("Operator: ")
-    while not (op == '+' or op == '-' or op == '*' or op == '/' or op == 'mod' or
-    op == '^' or op == 'nck' or op == '%'):
-        print("Wrong operator! Permitted operators: ",
-        "+, -,  *, /, mod, ^, nck and %")
-        op = input("Operator: ")
+    quantity = input("Do you want to calculate on more than two numbers? (y/n) ")
+    while not (quantity == 'y' or quantity == 'n'):
+        print("Wrong answer! Permitted answers: ",
+        "y and n")
 
 
-    num1 = int(input("First number: "))
-    while num1 < - 2147483648 or num1 >2147483647:    
-        print("Wrong number! Input integer in range ",
-        "from  -2,147,483,648 to 2,147,483,647 ")
-        num1 = int(input("First number: "))
-
-    num2 = int(input("Second number: "))
-    while num2 < - 2147483648 or num1 >2147483647:    
-        print("Wrong number! Input integer in range ",
-        "from  -2,147,483,648 to 2,147,483,647 ")
-        num2 = int(input("First number: "))
-
-    #Creating package
-    pack = BitArray()
-    pack = package.pack(op, num1, num2, 0, sessionID)
-    print (f"Sending: {pack.bin[0:3]} {pack.bin[3:35]} {pack.bin[35:67]}\
-    {pack.bin[67:69]} {pack.bin[69:77]} {pack.bin[77:]}")
-
-
-#Sending package to server
-    s.send(pack.tobytes())
+    if quantity == 'n':
+        package.sendTwo(sessionID, s, 1)
+    elif quantity == 'y':
+        package.sendTwo(sessionID, s, 0)
+        package.sendOne(sessionID, s)
 
 
 #Recieving result from server
-    data = BitArray()
-    data.append(s.recv(1024))
+    # data = BitArray()
+    # data.append(s.recv(1024))
 
-    print(f"Result: {data.int}")  
+    # print(f"Result: {data.int}")  
 
 #End connection
     s.shutdown(flag)
