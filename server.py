@@ -10,7 +10,7 @@ print("""
 
 #Connection variables
 HOST = '127.0.0.1'
-#HOST = '192.168.0.20'
+#HOST = '192.168.0.21'
 PORT = 4666
 flag =socket.SHUT_RDWR
 
@@ -29,8 +29,9 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         print("Connected by", addr)
 
 #Generate and send session id
-        ID = BitArray()
-        ID = package.IDGen(conn)
+        clientID = BitArray()
+        clientID = package.IDGen(conn)
+        serverID = BitArray(8)
 
         result = 0
         loop = True
@@ -40,81 +41,64 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             if not data:
                 break
 
-            print(f"Recieved: {data.bin[0:3]} {data.bin[3:35]}", 
-            f"{data.bin[35:67]} {data.bin[67:69]} {data.bin[69:77]}",
-            f"{data.bin[77:]}\tData size: {data.len}")
+            print (f"Recieved: {data.bin[0:3]} {data.bin[3:35]} {data.bin[35:37]}",
+                f" {data.bin[37:45]} {data.bin[45:46]} {data.bin[46:47]} {data.bin[47:]}")
             
-            
-
-            #TODO: some id verification?
-            if data.len == 80:
-
-                print(f"Recieved: {data.bin[0:3]} {data.bin[3:35]}", 
-                f"{data.bin[35:67]} {data.bin[67:69]} {data.bin[69:77]}",
-                f"{data.bin[77:]}\tData size: {data.len}")
-                status = abs(data[67:69].int)
-                if status == 1:
-
-                    operation = data[0:3].bin
-                    a = data[3:35].int
-                    b = data[35:67].int
-                    status = data[67:69]
-                    clientID = data[69:77].bin
-                    print(f"A: {a}, B:{b}")
-
-                    print("Operation: " + str(operation))
-                    result = package.countTwo(operation, a, b)
-                    pack = BitArray()
-                    pack = package.packOne('+', result, 2, ID, 0)
-                    conn.sendall(pack.tobytes())
-                    loop = False
-
-
-                elif status == 0:
-                    operation = data[0:3].bin
-                    a = data[3:35].int
-                    b = data[35:67].int
-                    status = data[67:69]
-                    clientID = data[69:77].bin
-                    print(f"A: {a}, B:{b}")
-
-                    print("Operation: " + str(operation))
-                    result = package.countTwo(operation, a, b)
-                    pack = BitArray()
-                    pack = package.packOne('+', result, 2, ID, 0)
-                    conn.sendall(pack.tobytes())
-
-                    #TODO: checking whether number is less than or equal to 32 bits
-            elif data.len == 48:
-                status = abs(data[35:37].int)
-                
-                print(f"Recieved: {data.bin[0:3]} {data.bin[3:35]}", 
-                f"{data.bin[35:37]} {data.bin[37:45]} {data.bin[45:]}")
-                if status == 1:
-
-                    operation = data[0:3].bin
-                    a = data[3:35].int           
-                    clientID = data[37:45].bin
-                    print(f"A: {a}, B:{b}")
-
-                    print("Operation: " + str(operation))
+            first = int(data[46])
+            #print(f"First: {first}")
+            last = int(data[45])
+            operation = data[0:3].bin
+            #operation = '-'
+            packg = BitArray()
+            if first == 1:
+                result = data[3:35].int
+                print(f"Server result: {result}")
+                packg = package.pack('+', result, 0, serverID, last, first, 0)
+            elif first == 0 and last == 0:            
+                a = data[3:35].int
+                print(f"MOJE DATA a: {a}")
+                try:
                     result = package.countTwo(operation, result, a)
-                    pack = BitArray()
-                    pack = package.packOne('+', result, 2,ID, 0) #TODO: Last result
-                    conn.sendall(pack.tobytes())
+                except Exception as err:
+                    print(f"Exception code: {int(err)}")
+                    packg = package.pack('+', 0, 3, serverID, 1, 0, int(err))
                     loop = False
-                
-                elif status == 0:
-                    operation = data[0:3].bin
-                    a = data[3:35].int           
-                    clientID = data[37:45].bin
-                    print(f"A: {a}, B:{b}")
-
-                    print("Operation: " + str(operation))
+                else:
+                    if result < -2147483648 or result > 2147483647:
+                        print(f"Exception code: 2")
+                        packg = package.pack('+', 0, 3, serverID, 1, 0, 2)
+                        loop = False
+                    elif isinstance(result, float):
+                        print("Isinstance")
+                        packg = package.pack('+', round(result), 2, serverID, last, first, 0)
+                    else:
+                        print("normal")
+                        packg = package.pack('+', result, 0, serverID, last, first, 0)
+            elif last == 1:
+                a = data[3:35].int
+                try:
                     result = package.countTwo(operation, result, a)
-                    pack = BitArray()
-                    pack = package.packOne('+', result, 2, ID, 0)
-                    conn.sendall(pack.tobytes())
+                except Exception as err:
+                    print(f"Exception code: {int(err)}")
+                    packg = package.pack('+', 0, 3, serverID, 1, 0, int(err))
+                    loop = False
+                else:
+                    if result < -2147483648 or result > 2147483647:
+                        print(f"Exception code: 2")
+                        packg = package.pack('+', 0, 3, serverID, 1, 0, 2)
+                        loop = False
+                    elif isinstance(result, float):
+                        print("Isinstance")
+                        packg = package.pack('+', round(result), 2, serverID, last, first, 0)
+                        loop = False
+                    else:
+                        print("Normal")
+                        packg = package.pack('+', result, 0, serverID, last, first, 0)
+                        loop = False
+
+            print (f"Sending:  {packg.bin[0:3]} {packg.bin[3:35]} {packg.bin[35:37]}",
+                f" {packg.bin[37:45]} {packg.bin[45:46]} {packg.bin[46:47]} {packg.bin[47:]}")
+            conn.sendall(packg.tobytes())
 
             
         print(f"Result: {result}")
