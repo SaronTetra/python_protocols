@@ -45,7 +45,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 
 
 #Input for package
-    print(f"CLIENT ID")
+    #print(f"CLIENT ID")
     package.sendFirst(sessionID, s, 0)
     package.sendPackage(sessionID, s)
 

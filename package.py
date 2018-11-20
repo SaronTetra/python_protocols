@@ -4,6 +4,7 @@ from bitstring import BitArray
 import maths
 import math
 import random
+import errors
 
 
 def operatorConvert(op): #done
@@ -70,15 +71,15 @@ def numberToBinary(num, bits):       #done
     if (neg == True):
         number.invert()
     
-    print (f"Number binary: {number.bin}")
-    print (f"Number int: {number.int}")
+    #print (f"Number binary: {number.bin}")
+    #print (f"Number int: {number.int}")
     return number
 
 
 def IDGen(socket): #done
     """Generate session ID"""
     ID = BitArray()
-    ID = numberToBinary(random.randrange(0, 256), 8)
+    ID = numberToBinary(random.randrange(1, 256), 8)
     packg = pack('+', 0, 1, ID, 0, 0, 0)
     print (f"Sending session ID: {packg.bin[0:3]} {packg.bin[3:35]} {packg.bin[35:37]}",
     f" {packg.bin[37:45]} {packg.bin[45:48]}")
@@ -131,20 +132,20 @@ def pack(op, num, stat, id, last, first, errors): #done
     49-55: pad
     """
     package = BitArray(0)
-    print(f" operacja {operatorConvert(op).bin}")
+    #print(f" operacja {operatorConvert(op).bin}")
     package.append(operatorConvert(op))     #operacja
 
-    print(f"  liczba {numberToBinary(num,32).bin}")
+    #print(f"  liczba {numberToBinary(num,32).bin}")
     package.append(numberToBinary(num, 32)) #liczba
-    print(" status ")
+    #print(" status ")
     package.append(status(stat))            #status
-    print(" id ")
+    #print(" id ")
     package.append(id)                      #id
-    print(" last ")
+    #print(" last ")
     package.append(desperation(last))       #flaga ostatni
-    print(" first ")
+    #print(" first ")
     package.append(desperation(first))      #flaga pierwzy
-    print(" error ")
+    #print(" error ")
     package.append(err(errors))             #error
     if(package.len != 56):                  #pad
         temp = BitArray(56-package.len)
@@ -152,9 +153,9 @@ def pack(op, num, stat, id, last, first, errors): #done
         package.append(temp)
 
     
-    print (f"Debug: {package.bin[0:3]} {package.bin[3:35]} {package.bin[35:37]}",
-                f" {package.bin[37:45]} {package.bin[45:46]} {package.bin[46:47]} {package.bin[47:]}")
-    print(f"Size:  {package.len}")
+    #print (f"Debug: {package.bin[0:3]} {package.bin[3:35]} {package.bin[35:37]}",
+    #            f" {package.bin[37:45]} {package.bin[45:46]} {package.bin[46:47]} {package.bin[47:]}")
+    #print(f"Size:  {package.len}")
 
     return package
 
@@ -180,14 +181,14 @@ def countTwo(op, a, b):
         if b != 0:
             return  a / b
         else:
-            raise Exception("1")
+            raise errors.DivisionByZeroException("1")
     elif op == "100":
         return a % b
     elif op == "101":
         return a**b
     elif op == "110":
         if b > a:
-            raise Exception("3")
+            raise errors.BinomalTheoremException("3")
         else: 
             return maths.binomialTheorem(a, b)
     elif op == "111":
@@ -264,20 +265,20 @@ def sendPackage(id, socket):
         print (f"Recieved: {data.bin[0:3]} {data.bin[3:35]} {data.bin[35:37]}",
             f" {data.bin[37:45]} {data.bin[45:46]} {data.bin[46:47]} {data.bin[47:]}")
 
-        print(f"Status: {abs(data[35:37].int)}")
-        st = abs(data[35:37].int)
+        print(f"Status: {abs(data[35:37].uint)}")
+        st = abs(data[35:37].uint)
         lastf = int(data[45])
         result = data[3:35].int
         
 
         #Errors
         if st == 3:
-            err = data[47:49].int
+            err = data[47:49].uint
             if err == 1:
-                print(f"Error ({err}): division by nought")
+                print(f"Error ({err}): division by zero")
                 last = 'y'
             elif err == 2:
-                print(f"Error ({err}): number is biger than 32 bits")
+                print(f"Error ({err}): number is bigger than 32 bits")
                 last = 'y'
             elif err == 3:
                 print(f"Error ({err}): in binomal theorem k can't be bigger than n")

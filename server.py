@@ -1,5 +1,6 @@
 import socket
 import package
+import errors
 from bitstring import BitArray, BitStream
 
 print("""
@@ -56,12 +57,16 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 packg = package.pack('+', result, 0, serverID, last, first, 0)
             elif first == 0 and last == 0:            
                 a = data[3:35].int
-                print(f"MOJE DATA a: {a}")
+                #print(f"MOJE DATA a: {a}")
                 try:
                     result = package.countTwo(operation, result, a)
-                except Exception as err:
-                    print(f"Exception code: {int(err)}")
-                    packg = package.pack('+', 0, 3, serverID, 1, 0, int(err))
+                except errors.DivisionByZeroException as err:
+                    print(f"Exception code: {err}")
+                    packg = package.pack('+', 0, 3, serverID, 1, 0, 1)
+                    loop = False
+                except errors.BinomalTheoremException as err:
+                    print(f"Exception code: {err}")
+                    packg = package.pack('+', 0, 3, serverID, 1, 0, 3)
                     loop = False
                 else:
                     if result < -2147483648 or result > 2147483647:
@@ -78,9 +83,13 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 a = data[3:35].int
                 try:
                     result = package.countTwo(operation, result, a)
-                except Exception as err:
-                    print(f"Exception code: {int(err)}")
-                    packg = package.pack('+', 0, 3, serverID, 1, 0, int(err))
+                except errors.DivisionByZeroException as err:
+                    print(f"Exception code: {err}")
+                    packg = package.pack('+', 0, 3, serverID, 1, 0, 1)
+                    loop = False
+                except errors.BinomalTheoremException as err:
+                    print(f"Exception code: {err}")
+                    packg = package.pack('+', 0, 3, serverID, 1, 0, 3)
                     loop = False
                 else:
                     if result < -2147483648 or result > 2147483647:
