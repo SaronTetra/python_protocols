@@ -14,6 +14,14 @@ print("""
 #   Czy można założyć, że pola zawsze są w tej samej kolejności i zawsze jest ich tyle samo?
 #       nie
 #
+#   Czy robić ACK?
+#
+#   Czy klienci zgadują na zmianę?
+#
+#   Pozostałe próby/podpowiedzi jako osobne pole?
+#
+#
+#
 
 
 # if (sys.argv[1] == 'm'):
@@ -35,30 +43,57 @@ print(f"Server reply: {data} \n---------")
 
 fields = datagram.unpack(data)
 print(fields)
+ID = 0
 if fields["op"] == "ID":
-    ID = fields["resp"]
-send = datagram.pack("test", "", ID)
-s.sendto(send.encode('ascii'), (HOST, PORT))
+    ID = fields["id"]
+# send = datagram.pack("test", "", ID)
+# s.sendto(send.encode('ascii'), (HOST, PORT))
 
 print(f"My ID: {ID}")
+
+
 # ID should be established, main program here
+
+def send(data):
+    s.sendto(data.encode("ascii"), (HOST, PORT))
+
+
+wait = True
+
 while True:
-    x = input("Enter operation (x to quit): ")
-    if x == 'x':
-        break
-    elif x == "":
-        send = datagram.pack(x, "", ID)
-    s.sendto(send.encode("ascii"), server)
+    op = ""
+    if not wait:
+        x = input(">")
+        if x == "x":
+            break
+        elif x == "id":
+            print(f"My ID: {ID}")
+            continue
+        # elif x == "":
+        send(datagram.pack(x, "", ID))
+
+    print("Waiting for server...")
     data, server = s.recvfrom(1024)
+    wait = False
     if data:
         fields = datagram.unpack(data)
         op = fields["op"]
-        # Does this make sense, or is it completely useless?
-        # if fields["id"] != ID:
-        #     print(f'This data is not for me ({ID}), its for {fields["id"]}')
-        #     continue
-
         if op == "test":
-            send = datagram.pack(op, "Hello there!", 0)
-        print("got data", data)
+            send = datagram.pack(op, "Hello there!", ID)
+        elif op == "wait":
+            wait = True
+            continue
+        elif op == "begin":
+            l = input("Please enter an even natural number: ")
+            send(datagram.pack("attnum", l, ID))
+            wait = True
+        elif op == "guess":
+            l = input("Input number: ")
+            send(datagram.pack("guess", l, ID))
+            wait = True
+        elif op == "lose":
+            print("Out of attempts")
+            break
+        elif op == "win":
+            print("You guess the number!")
 s.close()
