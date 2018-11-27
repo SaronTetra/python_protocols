@@ -19,21 +19,22 @@ flag =socket.SHUT_RDWR
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.bind((HOST, PORT))
 
-#Waiting for connection
+    #Waiting for connection
     print("Listening")
     s.listen()
 
-#Accepting connection
+    #Accepting connection
     conn, addr = s.accept()
     s.close()
     with conn:
         print("Connected by", addr)
 
-#Generate and send session id
+        #Generate and send session id
         clientID = BitArray()
         clientID = package.IDGen(conn)
         serverID = BitArray(8)
 
+        #Recieve data
         result = 0
         loop = True
         while loop:
@@ -44,18 +45,19 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 
             print (f"Recieved: {data.bin[0:3]} {data.bin[3:35]} {data.bin[35:37]}",
                 f" {data.bin[37:45]} {data.bin[45:46]} {data.bin[46:47]} {data.bin[47:]}")
-            
+            #Interpret package
             first = int(data[46])
             #print(f"First: {first}")
             last = int(data[45])
             operation = data[0:3].bin
-            #operation = '-'
             packg = BitArray()
             if first == 1:
+                #First package, inizializes server
                 result = data[3:35].int
                 print(f"Server result: {result}")
                 packg = package.pack('+', result, 0, serverID, last, first, 0)
-            elif first == 0 and last == 0:            
+            elif first == 0 and last == 0: 
+                #Next packages, calculations and preparing package to send
                 a = data[3:35].int
                 #print(f"MOJE DATA a: {a}")
                 try:
@@ -80,6 +82,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                         print("normal")
                         packg = package.pack('+', result, 0, serverID, last, first, 0)
             elif last == 1:
+                #Last package, calculations and preparing package to send
                 a = data[3:35].int
                 try:
                     result = package.countTwo(operation, result, a)
