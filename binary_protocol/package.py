@@ -7,9 +7,9 @@ import random
 import errors
 
 
-def operatorConvert(op): #done
+def operatorConvert(op):
     """
-    Convert operator to binary
+    Convert operator from symbol to binary
     000 - addition
     001 - subtraction
     010 - multiplication
@@ -45,7 +45,7 @@ def operatorConvert(op): #done
         return operator
 
 
-def numberToBinary(num, bits):       #done              
+def numberToBinary(num, bits):            
     """Convert int to binary array with lenght bits"""
     #print (f"Num: {num}")
 
@@ -76,7 +76,7 @@ def numberToBinary(num, bits):       #done
     return number
 
 
-def IDGen(socket): #done
+def IDGen(socket):
     """Generate session ID"""
     ID = BitArray()
     ID = numberToBinary(random.randrange(1, 256), 8)
@@ -87,19 +87,19 @@ def IDGen(socket): #done
     print("-------------------------------------------------------")
     return ID
 
-def status(num): #done
+def status(num):
     """
-    Change status to binary
+    Change status from number to binary
     00 - ack
     01 - session ID
     10 - ack with float
     11 - error
     """
-    #maybe do this using enum rather than numbers
+    
     status = BitArray(numberToBinary(num, 2))
     return status
 
-def err(num): #done
+def err(num):
     """
     Change number to error code
     00 - none
@@ -111,11 +111,7 @@ def err(num): #done
     return error
 
 def desperation(num):
-    # temp = BitArray(1)
-    # if num == 1:
-    #     temp[0] = 1
-    # print (f"num: {num}")
-    # print (f"temp: {temp.bin}")
+    """Change status to binary"""
     temp = BitArray(numberToBinary(num,1))
     return temp
 
@@ -222,6 +218,7 @@ def sendFirst(id, socket, error):
 
 def sendPackage(id, socket):
 
+    #Input
     last = 'n'
     while not (last ==  'y'):
         op = input("Operator: ")
