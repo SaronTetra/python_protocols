@@ -55,60 +55,72 @@ s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 s.bind((HOST, PORT))
 
 players = []
-paddr = []
 l = 0
-attempts = 0
+attempts = {}
 secretNumber = 0
 turn = 0
+ID = 0
+connected = {}
 
 while True:
     op = ""
     data, address = s.recvfrom(1024)
-
     if data:
         fields = datagram.unpack(data)
         op = fields["op"]
+        if fields["id"] != "":
+            pid = int(fields["id"])
+        if op != "ACK":
+            datagram.send(s, datagram.pack("ACK", "", op, fields["id"]), address, True)
+        if op == "ACK":
+            continue
         if op == "ID":
             ID = datagram.generateID();
             players.append(ID)
-            paddr.append(address)
-            send = datagram.pack("ID", "", ID)
-            s.sendto(send.encode("ascii"), address)
+            connected[ID] = address
+            send = datagram.pack("ID", "", "", ID)
+            datagram.send(s, send, address)
+            print()
             if len(players) >= 2:
-                send = datagram.pack("begin", "", players[0])
-                s.sendto(send.encode("ascii"), paddr[0])
-                send = datagram.pack("begin", "", players[1])
-                s.sendto(send.encode("ascii"), paddr[1])
+                for k, v in connected.items():
+                    send = datagram.pack("begin", "", "", k)
+                    datagram.send(s, send, v)
             continue
         elif op == "attnum":
             l += int(fields["resp"])
             print(f"got: {fields['resp']} ")
-            send = datagram.pack("wait", "", fields["id"])
-            turn += int(fields["id"])
+            send = datagram.pack("wait", "", "", pid)
+            turn += int(pid)
             if turn == players[0] + players[1]:
-                attempts = l / 2
-                secretNumber = random.randrange(1, 10000)
-                send = datagram.pack("guess", attempts, players[0])
-                s.sendto(send.encode("ascii"), paddr[0])
-                send = datagram.pack("guess", attempts, players[1])
-                s.sendto(send.encode("ascii"), paddr[1])
+                secretNumber = random.randrange(1, 100)
+                for k, v in connected.items():
+                    attempts[k] = int(l/2)
+                    print(f'KEY IS {k} - {v}')
+                    send = datagram.pack("guess", attempts[k], "", k)
+                    s.sendto(send.encode("ascii"), v)
                 turn = 0
                 print(f'"secret" number is {secretNumber}')
+                print()
 
         elif op == "guess":
-            attempts -= 1
-            if attempts < 0:
-                send = datagram.pack("lose", "", fields["id"])
-            if int(fields["resp"]) == secretNumber:
-                send = datagram.pack("win", "", fields["id"])
+            attempts[pid] -= 1
+            if attempts[pid] <= 0:
+                send = datagram.pack("lose", "", "", fields["id"])
+                players.pop()
+            elif int(fields["resp"]) == secretNumber:
+                send = datagram.pack("win", "", "", fields["id"])
+                players.pop()
             else:
                 if int(fields["resp"]) > secretNumber:
                     hint = "lower"
                 else:
                     hint = "higher"
-                send = datagram.pack("guess", f'{hint} - {attempts} left', fields["id"])
+                send = datagram.pack("guess", f'{hint} - {attempts} left', "", fields["id"])
         else:
-            send = datagram.pack("info", "Invalid command", 0)
-    s.sendto(send.encode("ascii"), address)
+            send = datagram.pack("info", "Invalid operation", "", 0)
+    datagram.send(s, send, address)
+    if len(players) == 0:
+        print("---KONIEC---")
+        break
 
 
